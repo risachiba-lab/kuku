@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>スーパー九九マスター（完全版）</title>
+<style>
+  body { 
+    text-align: center; 
+    font-family: 'Hiragino Maru Gothic ProN', 'Meiryo', sans-serif; 
+    background-color: #fff0f5; 
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Ctext x='20' y='40' font-size='25' opacity='0.4'%3E🌸%3C/text%3E%3Ctext x='80' y='100' font-size='25' opacity='0.4'%3E🌼%3C/text%3E%3C/svg%3E");
+    padding: 10px;
+  }
+  h1 { color: #ff69b4; margin-bottom: 5px; text-shadow: 2px 2px 4px rgba(255,105,180,0.2); }
+  .box { background: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; border: 2px solid #ffb6c1; }
+  .menu-btn { font-size: 1.2em; padding: 12px; margin: 8px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; width: 85%;}
+  
+  /* ボタンの色分け */
+  .btn-flashcard { background-color: #ffa500; color: white; }
+  .btn-practice { background-color: #87cefa; color: white; }
+  .btn-randomdan { background-color: #dda0dd; color: white; }
+  .btn-randommix { background-color: #9370db; color: white; }
+  .btn-timeattack { background-color: #ffb6c1; color: white; }
+  .btn-music { background-color: #3cb371; color: white; margin-bottom: 20px;}
+  
+  select { font-size: 1.2em; padding: 5px; margin-bottom: 15px; }
+  .section-title { font-weight: bold; color: #555; margin: 5px 0 10px 0; font-size: 1.1em;}
+  
+  #play-screen, #flashcard-screen { display: none; }
+  .info-bar { display: flex; justify-content: space-between; font-size: 1.2em; font-weight: bold; color: #555; margin-bottom: 10px;}
+  .question { font-size: 4em; margin: 10px; color: #333; }
+  .choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .choices button { font-size: 2em; width: 100px; height: 80px; background-color: #ffd700; color: #333; border: none; border-radius: 10px; font-weight: bold; cursor: pointer;}
+  .choices button:hover { background-color: #ffc107; transform: scale(1.05); transition: 0.2s;}
+  
+  .feedback { font-size: 1.5em; font-weight: bold; min-height: 3em; margin-top: 15px; white-space: pre-line; }
+  .back-btn { margin-top: 20px; padding: 10px; background: #ddd; border: none; border-radius: 5px; cursor: pointer;}
+
+  .fc-card { background: #ffe4e1; padding: 30px; border-radius: 15px; margin: 20px 0; border: 4px dashed #ffb6c1;}
+  .fc-equation { font-size: 5em; font-weight: bold; color: #e60012; margin-bottom: 10px;}
+  .fc-reading { font-size: 1.5em; color: #333; margin-bottom: 20px; font-weight: bold;}
+  .fc-visual { font-size: 2em; line-height: 1.2; letter-spacing: 2px;}
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h1>✨ スーパー九九マスター ✨</h1>
+  <button id="music-btn" class="menu-btn btn-music" onclick="toggleBGM()">🎵 音楽をONにする</button>
+
+  <!-- スタート画面 -->
+  <div id="start-screen">
+    
+    <!-- 選んだ段のコーナー -->
+    <div style="background: rgba(240, 248, 255, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+      <div class="section-title">🌸 えらんだ段であそぶ 🌸</div>
+      <select id="dan-select">
+        <option value="1">1のだん</option><option value="2" selected>2のだん</option>
+        <option value="3">3のだん</option><option value="4">4のだん</option>
+        <option value="5">5のだん</option><option value="6">6のだん</option>
+        <option value="7">7のだん</option><option value="8">8のだん</option>
+        <option value="9">9のだん</option>
+      </select><br>
+      <button class="menu-btn btn-flashcard" onclick="startFlashcard()">👀 音とイラストで覚える</button>
+      <button class="menu-btn btn-practice" onclick="startPractice()">✏️ じゅんばん通りに練習</button>
+      <button class="menu-btn btn-randomdan" onclick="startRandomDan()">🎲 えらんだ段をバラバラで練習</button>
+    </div>
+
+    <!-- ぜんぶまぜまぜのコーナー -->
+    <div style="background: rgba(255, 240, 245, 0.8); padding: 15px; border-radius: 10px;">
+      <div class="section-title">🔥 ぜんぶまぜまぜであそぶ 🔥</div>
+      <button class="menu-btn btn-randommix" onclick="startRandomMix()">🌪️ ぜんぶまぜまぜ 10問テスト</button>
+      <button class="menu-btn btn-timeattack" onclick="startTimeAttack()">⏱️ 30秒ランダムチャレンジ！</button>
+    </div>
+
+  </div>
+
+  <!-- クイズプレイ画面 -->
+  <div id="play-screen">
+    <div class="info-bar">
+      <span id="mode-title"></span><span id="status-text"></span>
+    </div>
+    <div class="question" id="q">？</div>
+    <div class="choices" id="choices"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="back-btn" onclick="backToMenu()">もどる</button>
+  </div>
+
+  <!-- フラッシュカード画面 -->
+  <div id="flashcard-screen">
+    <h2>フラッシュカード</h2>
+    <div class="fc-card">
+      <div class="fc-equation" id="fc-eq"></div>
+      <div class="fc-reading" id="fc-read"></div>
+      <div class="fc-visual" id="fc-vis"></div>
+    </div>
+    <button class="back-btn" onclick="backToMenu()">もどる（とめる）</button>
+  </div>
+</div>
+
+<script>
+  // 九九の読み方辞書
+  const kukuReadings = {
+    1: ["いんいちがいち", "いんにがに", "いんさんがさん", "いんしがし", "いんごがご", "いんろくがろく", "いんしちがしち", "いんはちがはち", "いんくがく"],
+    2: ["にいちがに", "ににんがし", "にさんがろく", "にしがはち", "にごじゅう", "にろくじゅうに", "にしちじゅうし", "にはちじゅうろく", "にくじゅうはち"],
+    3: ["さんいちがさん", "さんにがろく", "さざんがきゅう", "さんしじゅうに", "さんごじゅうご", "さぶろくじゅうはち", "さんしちにじゅういち", "さんぱにじゅうし", "さんくにじゅうしち"],
+    4: ["しいちがし", "しにがはち", "しさんじゅうに", "ししじゅうろく", "しごにじゅう", "しろくにじゅうし", "ししちにじゅうはち", "しはちさんじゅうに", "しくさんじゅうろく"],
+    5: ["ごいちがご", "ごにじゅう", "ごさんじゅうご", "ごしにじゅう", "ごごにじゅうご", "ごろくさんじゅう", "ごしちさんじゅうご", "ごはちしじゅう", "ごくしじゅうご"],
+    6: ["ろくいちがろく", "ろくにじゅうに", "ろくさんじゅうはち", "ろくしにじゅうし", "ろくごさんじゅう", "ろくろくさんじゅうろく", "ろくしちしじゅうに", "ろくはしじゅうはち", "ろっくごじゅうし"],
+    7: ["しちいちがしち", "しちにじゅうし", "しちさんにじゅういち", "しちしにじゅうはち", "しちごさんじゅうご", "しちろくしじゅうに", "しちしちしじゅうく", "しちはごじゅうろく", "しちくろくじゅうさん"],
+    8: ["はちいちがはち", "はちにじゅうろく", "はちさんにじゅうし", "はちしさんじゅうに", "はちごしじゅう", "はちろくしじゅうはち", "はちしちごじゅうろく", "はっぱろくじゅうし", "はっくしちじゅうに"],
+    9: ["くいちがく", "くにじゅうはち", "くさんにじゅうしち", "くしさんじゅうろく", "くごしじゅうご", "くろくごじゅうし", "くしちろくじゅうさん", "くはしじゅうに", "くくはちじゅういち"]
+  };
+
+  // --- 音楽処理 ---
+  let audioCtx = null; let isPlaying = false; let bgmInterval = null;
+  const melody = [392.00, 329.63, 261.63, 329.63]; 
+  let noteIndex = 0;
+
+  function toggleBGM() {
+    try {
+      const btn = document.getElementById('music-btn');
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (isPlaying) {
+        clearInterval(bgmInterval); isPlaying = false;
+        btn.innerText = '🎵 音楽をONにする'; btn.style.backgroundColor = '#3cb371';
+      } else {
+        audioCtx.resume(); isPlaying = true;
+        btn.innerText = '🔇 音楽をOFFにする'; btn.style.backgroundColor = '#ff6347';
+        bgmInterval = setInterval(() => {
+          const isStrongBeat = (noteIndex % 2 === 0);
+          playNote(melody[noteIndex], isStrongBeat);
+          noteIndex = (noteIndex + 1) % melody.length;
+        }, 300); 
+      }
+    } catch(e) {}
+  }
+
+  function playNote(freq, isStrongBeat) {
+    if (!audioCtx) return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square'; 
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      const volume = isStrongBeat ? 0.08 : 0.03; 
+      gain.gain.setValueAtTime(volume, audioCtx.currentTime); 
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+    } catch(e) {}
+  }
+
+  // --- 自然なボイス設定（男の子風・標準の高さ） ---
+  function getCharacterVoice() {
+    try {
+      const voices = window.speechSynthesis.getVoices();
+      let naturalVoice = voices.find(v => v.lang === 'ja-JP' && v.name.includes('Otoya'));
+      if (!naturalVoice) naturalVoice = voices.find(v => v.lang === 'ja-JP' && v.name.includes('Google'));
+      return naturalVoice || voices.find(v => v.lang === 'ja-JP');
+    } catch(e) {
+      return null;
+    }
+  }
+
+  function speakMessage(text) {
+    try {
+      window.speechSynthesis.cancel(); 
+      let msg = new SpeechSynthesisUtterance(text);
+      let v = getCharacterVoice();
+      if (v) msg.voice = v;
+      msg.lang = 'ja-JP';
+      msg.pitch = 1.0; 
+      msg.rate = 1.1; 
+      window.speechSynthesis.speak(msg);
+    } catch(e) {}
+  }
+
+  function backToMenu() {
+    clearInterval(timerId);
+    window.speechSynthesis.cancel(); 
+    isFlashcardActive = false;
+    document.getElementById('start-screen').style.display = 'block';
+    document.getElementById('play-screen').style.display = 'none';
+    document.getElementById('flashcard-screen').style.display = 'none';
+  }
+
+  // --- フラッシュカード ---
+  let fcDan = 2; let fcIndex = 1; let isFlashcardActive = false;
+  const emojis = ["🍎", "🚗", "🐶", "⭐", "🍓", "🤖", "🐸", "💎", "⚽"];
+
+  function startFlashcard() {
+    fcDan = parseInt(document.getElementById('dan-select').value);
+    fcIndex = 1; isFlashcardActive = true;
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('flashcard-screen').style.display = 'block';
+    
+    try { window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch(e){}
+    setTimeout(() => {
+        speakMessage(`${fcDan}のだん、いくよっ！`);
+        setTimeout(showNextFlashcard, 1500); 
+    }, 500);
+  }
+
+  function showNextFlashcard() {
+    if (!isFlashcardActive) return;
+    if (fcIndex > 9) {
+      document.getElementById('fc-eq').innerText = "おわり！";
+      document.getElementById('fc-read').innerText = "よくできました💮";
+      document.getElementById('fc-vis').innerText = "";
+      speakMessage("よくできました！");
+      return;
+    }
+    const answer = fcDan * fcIndex;
+    const currentEmoji = emojis[fcDan - 1]; 
+    let visualHtml = "";
+    for(let i = 0; i < fcIndex; i++) visualHtml += currentEmoji.repeat(fcDan) + "<br>"; 
+
+    document.getElementById('fc-eq').innerText = `${fcDan} × ${fcIndex} = ${answer}`;
+    document.getElementById('fc-read').innerText = kukuReadings[fcDan][fcIndex - 1];
+    document.getElementById('fc-vis').innerHTML = visualHtml;
+
+    try {
+      let msg = new SpeechSynthesisUtterance(kukuReadings[fcDan][fcIndex - 1]);
+      let v = getCharacterVoice();
+      if(v) msg.voice = v;
+      msg.lang = 'ja-JP'; msg.pitch = 1.0; msg.rate = 1.1;  
+      msg.onend = function() {
+        fcIndex++;
+        if (isFlashcardActive) setTimeout(showNextFlashcard, 700); 
+      };
+      window.speechSynthesis.speak(msg);
+    } catch(e) {
+      fcIndex++;
+      if (isFlashcardActive) setTimeout(showNextFlashcard, 1500);
+    }
+  }
+
+  // --- クイズ処理 ---
+  let mode = ''; let currentQ = {}; let practiceQueue = []; let wrongQueue = []; 
+  let score = 0; let timeLeft = 0; let timerId = null; let isWaiting = false;
+  let mistakeCount = 0; 
+
+  // 2. じゅんばん通りに練習
+  function startPractice() {
+    const dan = parseInt(document.getElementById('dan-select').value);
+    mode = 'practice'; practiceQueue = []; wrongQueue = []; mistakeCount = 0;
+    for(let i=1; i<=9; i++) practiceQueue.push({a: dan, b: i});
+    
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('play-screen').style.display = 'block';
+    document.getElementById('mode-title').innerText = `${dan}のだん じゅんばん`;
+    try { window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch(e){}
+    speakMessage("いっしょにがんばろうね！");
+    setTimeout(nextPracticeQuestion, 1000);
+  }
+
+  // 3. 選んだ段をバラバラで練習（10問）
+  function startRandomDan() {
+    const dan = parseInt(document.getElementById('dan-select').value);
+    mode = 'practice'; 
+    practiceQueue = []; wrongQueue = []; mistakeCount = 0;
+    for(let i=0; i<10; i++) {
+      let randomB = Math.floor(Math.random() * 9) + 1;
+      practiceQueue.push({a: dan, b: randomB});
+    }
+    
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('play-screen').style.display = 'block';
+    document.getElementById('mode-title').innerText = `${dan}のだん バラバラ`;
+    try { window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch(e){}
+    speakMessage("ランダムテスト、がんばろうね！");
+    setTimeout(nextPracticeQuestion, 1000);
+  }
+
+  // 4. ぜんぶまぜまぜ 10問テスト（すべてMIX）
+  function startRandomMix() {
+    mode = 'practice'; 
+    practiceQueue = []; wrongQueue = []; mistakeCount = 0;
+    
+    // a(1~9)とb(1~9)の両方をランダムに選んで10問作成
+    for(let i=0; i<10; i++) {
+      let randomA = Math.floor(Math.random() * 9) + 1;
+      let randomB = Math.floor(Math.random() * 9) + 1;
+      practiceQueue.push({a: randomA, b: randomB});
+    }
+    
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('play-screen').style.display = 'block';
+    document.getElementById('mode-title').innerText = `ぜんぶまぜまぜ 10問`;
+    try { window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch(e){}
+    speakMessage("ぜんぶまぜまぜテスト、いくよ！");
+    setTimeout(nextPracticeQuestion, 1000);
+  }
+
+  function nextPracticeQuestion() {
+    if (practiceQueue.length === 0) {
+      if (wrongQueue.length > 0) {
+        document.getElementById('feedback').innerText = '⚠️ まちがいやりなおし！';
+        document.getElementById('feedback').style.color = '#ff8c00';
+        practiceQueue = wrongQueue; wrongQueue = [];
+        speakMessage("まちがいをやりなおそう！");
+        setTimeout(showQuestion, 2000);
+      } else {
+        document.getElementById('choices').innerHTML = '';
+        
+        let finalMessage = "かんぺきだね！";
+        if (mistakeCount === 0) {
+          finalMessage = "パーフェクト！かんぺきだね！";
+        }
+
+        document.getElementById('q').innerText = '🌸 クリア 🌸';
+        document.getElementById('feedback').innerText = finalMessage;
+        document.getElementById('feedback').style.color = '#ff1493';
+        
+        speakMessage(finalMessage);
+      }
+      return;
+    }
+    showQuestion();
+  }
+
+  // 5. 30秒ランダムチャレンジ
+  function startTimeAttack() {
+    mode = 'timeattack'; score = 0; timeLeft = 30;
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('play-screen').style.display = 'block';
+    document.getElementById('mode-title').innerText = '⏱️ 30秒チャレンジ';
+    document.getElementById('status-text').innerText = `スコア: ${score} | のこり: ${timeLeft}秒`;
+    
+    try { window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch(e){}
+    speakMessage("よーい、スタート！");
+    
+    setTimeout(() => {
+        timerId = setInterval(() => {
+          timeLeft--;
+          document.getElementById('status-text').innerText = `スコア: ${score} | のこり: ${timeLeft}秒`;
+          
+          if (timeLeft <= 0) {
+            clearInterval(timerId);
+            document.getElementById('q').innerText = '終了！';
+            document.getElementById('choices').innerHTML = '';
+            
+            let resultText = `🎉 今回のせいかい： ${score}こ\n`;
+            let voiceText = "";
+
+            let lastScore = null;
+            try { lastScore = localStorage.getItem('kuku_timeattack_last'); } catch(e){}
+
+            if (lastScore !== null) {
+              lastScore = parseInt(lastScore);
+              resultText += `（ぜんかいの記録： ${lastScore}こ）`;
+              if (score > lastScore) {
+                let diff = score - lastScore;
+                resultText += `\n✨ぜんかいより ${diff}こ ふえたよ！`;
+                voiceText = `前回より、${diff}こ 多くできたね！すごいっ！`;
+              } else if (score === lastScore) {
+                resultText += `\n🤝ぜんかいと同じきろくだね！`;
+                voiceText = `前回と同じ記録だね！よくがんばった！`;
+              } else {
+                voiceText = `前回は${lastScore}個だったね。次は勝てるよ！`;
+              }
+            } else {
+              resultText += `はじめてのチャレンジ、おつかれさま！`;
+              if (score >= 15) voiceText = "すごーい！かんぺきだね！";
+              else if (score >= 5) voiceText = "がんばったね！君ならもっとできるよ！";
+              else voiceText = "よくがんばったね！";
+            }
+
+            try { localStorage.setItem('kuku_timeattack_last', score); } catch(e){}
+
+            let fb = document.getElementById('feedback');
+            fb.innerText = resultText;
+            fb.style.color = '#ff1493';
+            speakMessage(voiceText);
+          }
+        }, 1000);
+        showQuestion();
+    }, 1500);
+  }
+
+  function showQuestion() {
+    isWaiting = false; document.getElementById('feedback').innerText = '';
+    
+    if (mode === 'practice') {
+      currentQ = practiceQueue.shift();
+      document.getElementById('status-text').innerText = `のこり: ${practiceQueue.length + 1}問`;
+    } else {
+      currentQ = { a: Math.floor(Math.random() * 9) + 1, b: Math.floor(Math.random() * 9) + 1 };
+    }
+
+    const answer = currentQ.a * currentQ.b;
+    document.getElementById('q').innerText = `${currentQ.a} × ${currentQ.b} =`;
+
+    let options = [answer];
+    while(options.length < 4) {
+      let wrong = answer + (Math.floor(Math.random() * 15) - 7);
+      if(wrong > 0 && !options.includes(wrong)) options.push(wrong);
+    }
+    options.sort(() => Math.random() - 0.5);
+
+    const choiceDiv = document.getElementById('choices');
+    choiceDiv.innerHTML = '';
+    options.forEach(opt => {
+      let btn = document.createElement('button');
+      btn.innerText = opt;
+      btn.onclick = () => checkAnswer(opt, answer);
+      choiceDiv.appendChild(btn);
+    });
+  }
+
+  function checkAnswer(selected, correct) {
+    if (isWaiting || timeLeft <= 0 && mode === 'timeattack') return;
+    isWaiting = true;
+    const fb = document.getElementById('feedback');
+    if (selected === correct) {
+      fb.innerText = '⭕️ だいせいかい！'; fb.style.color = '#ff1493';
+      if (mode === 'timeattack') { score++; setTimeout(showQuestion, 400); } 
+      else { setTimeout(nextPracticeQuestion, 800); }
+    } else {
+      fb.innerText = `❌ 答えは ${correct}`; fb.style.color = '#1e90ff';
+      if (mode === 'practice') { 
+        wrongQueue.push(currentQ); 
+        mistakeCount++;
+        setTimeout(nextPracticeQuestion, 1500); 
+      } 
+      else { setTimeout(showQuestion, 800); }
+    }
+  }
+</script>
+
+</body>
+</html>
